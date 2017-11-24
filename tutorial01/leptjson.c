@@ -25,10 +25,19 @@ static int lept_parse_null(lept_context* c, lept_value* v) {
 }
 
 static int lept_parse_value(lept_context* c, lept_value* v) {
+    int result;
     switch (*c->json) {
-        case 'n':  return lept_parse_null(c, v);
+        case 'n':  
+            result = lept_parse_null(c, v);
+        break;
         case '\0': return LEPT_PARSE_EXPECT_VALUE;
         default:   return LEPT_PARSE_INVALID_VALUE;
+    }
+    if (LEPT_PARSE_OK != result) {
+        return result;
+    } else {
+        lept_parse_whitespace(c);
+        return '\0' == *c->json ? result : LEPT_PARSE_ROOT_NOT_SINGULAR;
     }
 }
 
