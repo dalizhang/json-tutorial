@@ -2,6 +2,9 @@
 #include <assert.h>  /* assert() */
 #include <stdlib.h>  /* NULL, strtod() */
 
+#define ISDIGIT(ch)         ((ch) >= '0' && (ch) <= '9')
+#define ISDIGIT1TO9(ch)     ((ch) >= '1' && (ch) <= '9')
+
 typedef struct {
     const char *json;
 } lept_context;
@@ -31,15 +34,59 @@ static int lept_parse_literal(lept_context *c, lept_value *v) {
     }
 }
 
-static int lept_parse_number(lept_context *c, lept_value *v) {
+static int lept_parse_strtod(lept_context *c, lept_value *v) {
     char *end;
-    /* \TODO validate number */
     v->n = strtod(c->json, &end);
     if (c->json == end)
         return LEPT_PARSE_INVALID_VALUE;
     c->json = end;
     v->type = LEPT_NUMBER;
     return LEPT_PARSE_OK;
+}
+
+static int lept_parse_number(lept_context *c, lept_value *v) {
+    char * jsonP = c->json;
+    if (*jsonP == '-') {
+        jsonP++;
+    }
+    if (*jsonP == '0' && !(jsonP[1] == '.' || jsonP[1] == '\0')) {
+        return LEPT_PARSE_INVALID_VALUE;
+    }
+    do {
+        if (ISDIGIT(*jsonP)) {
+            jsonP++;
+        } else {
+            return LEPT_PARSE_INVALID_VALUE;
+        }
+    } while (*jsonP != '.' && *jsonP != 'E' && *jsonP != 'e' && *jsonP != '\0');
+    if (*jsonP == '\0') {
+        return lept_parse_strtod(c, v);
+    } else if (*jsonP == '.') {
+        jsonP++;
+        do {
+            if (ISDIGIT(*jsonP)) {
+                jsonP++;
+            } else {
+                return LEPT_PARSE_INVALID_VALUE;
+            }
+        } while (*jsonP != 'E' && *jsonP != 'e' && *jsonP != '\0');
+    }
+    if (*jsonP == '\0') {
+        return lept_parse_strtod(c, v);
+    } else {
+        jsonP++;
+    }
+    if (*jsonP == '+' || *jsonP == '-') {
+        jsonP++;
+    }
+    do {
+        if (ISDIGIT(*jsonP)) {
+            jsonP++;
+        } else {
+            return LEPT_PARSE_INVALID_VALUE;
+        }
+    } while (*jsonP != '\0');
+    return lept_parse_strtod(c, v);
 }
 
 static int lept_parse_value(lept_context *c, lept_value *v) {
