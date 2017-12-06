@@ -96,7 +96,7 @@ static int lept_parse_string(lept_context* c, lept_value* v) {
         switch (ch) {
             case '\"':
                 len = c->top - head;
-                lept_set_string(v, (const char*)lept_context_pop(c, len), len);
+                lept_set_string(v, (const char *) lept_context_pop(c, len), len);
                 c->json = p;
                 return LEPT_PARSE_OK;
             case '\\':
@@ -127,6 +127,7 @@ static int lept_parse_string(lept_context* c, lept_value* v) {
                         PUTC(c, '\t');
                         break;
                     default:
+                        return LEPT_PARSE_INVALID_STRING_ESCAPE;
                         break;
                 }
                 break;
@@ -134,6 +135,10 @@ static int lept_parse_string(lept_context* c, lept_value* v) {
                 c->top = head;
                 return LEPT_PARSE_MISS_QUOTATION_MARK;
             default:
+                //%x20-21 / %x23-5B / %x5D-10FFFF
+                if (!((ch >= '\x20' && ch <= '\x21') || (ch >= '\x23' && ch <= '\x5B') || (ch >= '\x5D'))) {
+                    return LEPT_PARSE_INVALID_STRING_CHAR;
+                }
                 PUTC(c, ch);
         }
     }
