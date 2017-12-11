@@ -116,6 +116,7 @@ static const char *lept_parse_hex4(const char *p, unsigned *u) {
 }
 
 static void lept_encode_utf8(lept_context *c, unsigned u) {
+    assert(u >= 0 && u <= 0x10FFFF);
     if (u <= 0x007F) {
         PUTC(c, (char)u);
     } else if (u >= 0x0080 && u <= 0x07FF) {
